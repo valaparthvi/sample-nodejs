@@ -2,6 +2,7 @@
 
 This is a sample starter project that provides you with a basic Express app and a sample test in a `/test` sub directory. This sample project uses `Express v4.17.x` and enables health checking and application metrics out of the box. You can override or enhance the following endpoints by configuring your own health checks in your application.
 
+Click [here](https://gist.github.com/valaparthvi/b46bbf137bfa2967826d2792a6f0d7be) to download the devfile for Outerloop deployment cycle.
 ## Health checking
 
 Health-checking enables the cloud platform to determine the `readiness` and `liveness` of your application.
