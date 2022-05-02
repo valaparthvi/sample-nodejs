@@ -1,0 +1,115 @@
+commands:
+- exec:
+    commandLine: npm install
+    component: runtime
+    group:
+      isDefault: true
+      kind: build
+    workingDir: $PROJECT_SOURCE
+  id: install
+- exec:
+    commandLine: npm start
+    component: runtime
+    group:
+      isDefault: true
+      kind: run
+    workingDir: $PROJECT_SOURCE
+  id: run
+- apply:
+    component: prod-image
+  id: build-image
+- apply:
+    component: outerloop-deploy
+  id: deploy-deployment
+- apply:
+    component: outerloop-service
+  id: deploy-service
+- composite:
+    commands:
+    - build-image
+    - deploy-deployment
+    - deploy-service
+    group:
+      isDefault: true
+      kind: deploy
+  id: deploy
+components:
+- container:
+    endpoints:
+    - name: http-3000
+      targetPort: 3000
+    image: registry.access.redhat.com/ubi8/nodejs-14:latest
+    memoryLimit: 1024Mi
+    mountSources: true
+  name: runtime
+- image:
+    dockerfile:
+      buildContext: ${PROJECT_SOURCE}
+      uri: ./Dockerfile
+    imageName: quay.io/pvala18/my-nodejs-app:latest
+  name: prod-image
+- kubernetes:
+    inlined: |
+      kind: Deployment
+      apiVersion: apps/v1
+      metadata:
+        name: my-nodejs-deploy
+      spec:
+        replicas: 1
+        selector:
+          matchLabels:
+            app: my-nodejs-app
+        template:
+          metadata:
+            labels:
+              app: my-nodejs-app
+          spec:
+            containers:
+              - name: main
+                image: "quay.io/pvala18/my-nodejs-app:latest"
+                resources: {}
+  name: outerloop-deploy
+- kubernetes:
+    inlined: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        labels:
+          app: my-nodejs-app
+        name: my-nodejs-svc
+      spec:
+        ports:
+        - name: http-3000
+          port: 3000
+          protocol: TCP
+          targetPort: 3000
+        selector:
+          app: my-nodejs-app
+        type: LoadBalancer
+        externalIPs:
+        - 192.168.59.112
+  name: outerloop-service
+metadata:
+  architectures:
+  - amd64
+  - arm64
+  description: Stack with NodeJS 12
+  displayName: NodeJS Runtime
+  language: nodejs
+  name: my-nodejs-app
+  projectType: nodejs
+  provider: Red Hat
+  supportUrl: http://testurl/support.md
+  tags:
+  - NodeJS
+  - Express
+  - ubi8
+  version: 1.0.0
+schemaVersion: 2.2.0
+starterProjects:
+- git:
+    remotes:
+      origin: https://github.com/odo-devfiles/nodejs-ex.git
+  name: nodejs-starter
+variables:
+  CONTAINER_IMAGE: quay.io/pvala18/my-nodejs-app:latest
